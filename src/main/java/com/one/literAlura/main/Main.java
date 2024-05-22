@@ -1,10 +1,18 @@
 package com.one.literAlura.main;
 
+import com.one.literAlura.dto.LivroDto;
+import com.one.literAlura.dto.ResultadosDto;
+import com.one.literAlura.service.ConversorJson;
+import com.one.literAlura.service.Requisitor;
+
+import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class Main {
     private final Scanner sc = new Scanner(System.in);
+    private final Requisitor requisitor = new Requisitor();
+    private final ConversorJson conversor = new ConversorJson();
 
     public void menu(){
 
@@ -12,8 +20,43 @@ public class Main {
 
         while (option != 0){
             exibirMenu();
-            option = pegarOpcao();
+            option = Integer.parseInt(pegarOpcao("Digite uma opção:"));
             limparConsole();
+
+            String notImpl = "Opção não criada ainda. Por favor, tente mais tarde! :(";
+            String urlBase = "https://gutendex.com/books?search=";
+
+            switch (option){
+                case 1:
+                    String nomeLivro = pegarOpcao("Digite o título do livro desejado:")
+                            .trim().replace(" ", "%20");
+                    String url = urlBase + nomeLivro;
+                    HttpResponse<String> response = requisitor.requisitar(url);
+
+                    ResultadosDto resultados = conversor.converterJsonParaClasse(response.body(), ResultadosDto.class);
+                    System.out.println(resultados);
+                    break;
+                case 2:
+                    System.out.println(mensagemEmCaixa(notImpl));
+                    break;
+                case 3:
+                    System.out.println(mensagemEmCaixa(notImpl));
+                    break;
+                case 4:
+                    System.out.println(mensagemEmCaixa(notImpl));
+                    break;
+                case 5:
+                    System.out.println(mensagemEmCaixa(notImpl));
+                    break;
+
+                case 0:
+                    System.out.println(mensagemEmCaixa("Obrigado por usar a aplicação :)"));
+                    break;
+
+                default:
+                    System.out.println(mensagemEmCaixa("Opção inválida! Digite uma opção válida!"));
+                    break;
+            }
         }
 
     }
@@ -32,9 +75,9 @@ public class Main {
         System.out.print(menu);
     }
 
-    private int pegarOpcao(){
-        System.out.println(mensagemEmCaixa("Digite uma opção:"));
-        return Integer.parseInt(sc.nextLine());
+    private String pegarOpcao(String mensagem){
+        System.out.println(mensagemEmCaixa(mensagem));
+        return sc.nextLine();
     }
 
     private String mensagemEmCaixa(String msg){
