@@ -2,17 +2,31 @@ package com.one.literAlura.main;
 
 import com.one.literAlura.dto.LivroDto;
 import com.one.literAlura.dto.ResultadosDto;
+import com.one.literAlura.model.Livro;
 import com.one.literAlura.service.ConversorJson;
+import com.one.literAlura.service.LivroService;
 import com.one.literAlura.service.Requisitor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.net.http.HttpResponse;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Scanner;
 
 public class Main {
     private final Scanner sc = new Scanner(System.in);
     private final Requisitor requisitor = new Requisitor();
     private final ConversorJson conversor = new ConversorJson();
+    private UI ui = new UI(sc);
+    private LivroService service;
+
+    private static final String URL_BASE = "https://gutendex.com/books?search=";
+
+    public Main(LivroService service) {
+        this.service = service;
+    }
+
 
     public void menu(){
 
@@ -20,41 +34,34 @@ public class Main {
 
         while (option != 0){
             exibirMenu();
-            option = Integer.parseInt(pegarOpcao("Digite uma opção:"));
-            limparConsole();
+            option = ui.pegarOpcaoNumerica("Digite uma opção:");
+            ui.limparConsole();
 
             String notImpl = "Opção não criada ainda. Por favor, tente mais tarde! :(";
-            String urlBase = "https://gutendex.com/books?search=";
 
             switch (option){
                 case 1:
-                    String nomeLivro = pegarOpcao("Digite o título do livro desejado:")
-                            .trim().replace(" ", "%20");
-                    String url = urlBase + nomeLivro;
-                    HttpResponse<String> response = requisitor.requisitar(url);
-
-                    ResultadosDto resultados = conversor.converterJsonParaClasse(response.body(), ResultadosDto.class);
-                    System.out.println(resultados);
+                    buscarLivroPorTitulo();
                     break;
                 case 2:
-                    System.out.println(mensagemEmCaixa(notImpl));
+                    System.out.println(ui.mensagemEmCaixa(notImpl));
                     break;
                 case 3:
-                    System.out.println(mensagemEmCaixa(notImpl));
+                    System.out.println(ui.mensagemEmCaixa(notImpl));
                     break;
                 case 4:
-                    System.out.println(mensagemEmCaixa(notImpl));
+                    System.out.println(ui.mensagemEmCaixa(notImpl));
                     break;
                 case 5:
-                    System.out.println(mensagemEmCaixa(notImpl));
+                    System.out.println(ui.mensagemEmCaixa(notImpl));
                     break;
 
                 case 0:
-                    System.out.println(mensagemEmCaixa("Obrigado por usar a aplicação :)"));
+                    System.out.println(ui.mensagemEmCaixa("Obrigado por usar a aplicação :)"));
                     break;
 
                 default:
-                    System.out.println(mensagemEmCaixa("Opção inválida! Digite uma opção válida!"));
+                    System.out.println(ui.mensagemEmCaixa("Opção inválida! Digite uma opção válida!"));
                     break;
             }
         }
@@ -63,7 +70,7 @@ public class Main {
 
     private void exibirMenu() {
 
-        String menu = mensagemEmCaixa(Arrays.asList(
+        String menu = UI.mensagemEmCaixa(Arrays.asList(
                 "1 - Buscar um livro pelo título",
                 "2 - Listar livros registrados",
                 "3 - Listar autores registrados",
@@ -71,45 +78,30 @@ public class Main {
                 "5 - Listar livros em um determinado idioma",
                 "",
                 "0 - sair"
-        ));
+        ), 3);
         System.out.print(menu);
     }
 
-    private String pegarOpcao(String mensagem){
-        System.out.println(mensagemEmCaixa(mensagem));
-        return sc.nextLine();
-    }
+    private void buscarLivroPorTitulo(){
+        String nomeLivro = ui.pegarOpcao("Digite o título do livro desejado:")
+                .trim().replace(" ", "%20");
+        String url = URL_BASE + nomeLivro;
+        HttpResponse<String> response = requisitor.requisitar(url);
 
-    private String mensagemEmCaixa(String msg){
-        int len = msg.length() + 2;
-        String top = "┌" + "─".repeat(len) + "┐\n";
-        String middle = "│ " + msg + " │\n";
-        String bottom = "└" + "─".repeat(len) + "┘\n";
-        return top + middle + bottom;
-    }
+        ResultadosDto resultados = conversor.converterJsonParaClasse(response.body(), ResultadosDto.class);
 
-    private String mensagemEmCaixa(List<String> mensagens){
-        //pegando tamanho da maior mensagem
-        int len = mensagens.stream()
-                .max(Comparator.comparing(String::length)).get().length();
+        //Salvando somente o primeiro livro encontrado.
+        if(resultados.resultados_encontrados() > 0){
+            List<LivroDto> livrosList = resultados.livros();
 
-        //igualando todas mensagens
-        int finalLen = len;
-        mensagens = mensagens.stream().map(m -> m+=" ".repeat(finalLen - m.length()))
-                .collect(Collectors.toList());
+            Livro livro = new Livro(livrosList.getFirst());
+            service.salvarLivro(livro);
 
-        len += 2;
-
-        String top = "┌" + "─".repeat(len) + "┐\n";
-        String middle = mensagens.stream().map(m -> "│ " + m + " │\n")
-                .reduce("", String::concat);
-        String bottom = "└" + "─".repeat(len) + "┘\n";
-        return top + middle + bottom;
-    }
-
-    private void limparConsole(){
-        for (int i = 0; i < 30; i++){
-            System.out.println();
+            System.out.println(livro);
         }
+        else {
+            System.out.println(ui.mensagemEmCaixa("Não foram encontrados resultados com o título informado"));
+        }
+
     }
 }
