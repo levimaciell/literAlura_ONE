@@ -67,7 +67,7 @@ public class Autor {
                 "",
                 nome,
                 "Ano de Nascimento: " + anoNascimento,
-                "Ano de Morte: " + anoMorte
+                "Ano de Falecimento: " + anoMorte
         );
 
         return UI.mensagemEmCaixa(st, 3);

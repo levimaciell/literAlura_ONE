@@ -18,7 +18,7 @@ public class Livro {
     @Column(unique = true)
     private String titulo;
 
-    @ManyToMany(cascade = CascadeType.PERSIST)
+    @ManyToMany(fetch = FetchType.EAGER)
     private List<Autor> autores;
     private String idioma;
     private Integer downloads;
